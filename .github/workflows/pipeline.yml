@@ -106,7 +106,7 @@ jobs:
             # apply manifests
             kubectl apply -f k8s/manifests/
 
-          elif [[ "$GITHUB_REF" == "refs/heads/prod" ]]; then
+          elif [[ "$GITHUB_REF" == "refs/heads/prod" || "$GITHUB_REF" == "refs/heads/main" ]]; then
             echo "✅ Production deploy: ArgoCD GitOps"
 
             argocd login ${{ secrets.ARGOCD_SERVER }} \
