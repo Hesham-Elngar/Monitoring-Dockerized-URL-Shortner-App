@@ -1,90 +1,232 @@
-name: Full CI-CD Pipeline
+name: CI-CD Pipeline
 
 on:
   workflow_dispatch:
     inputs:
       branch:
-        description: 'Branch to run CI/CD on'
+        description: 'Branch to deploy (optional)'
         required: false
         default: ''
   push:
-    branches:
-      - dev/test
-      - staging
-      - prod
+    branches: [dev/test, staging, prod]
   pull_request:
-    branches:
-      - main
-      - prod
+    branches: [main, prod]
 
 jobs:
-
-  ci-checks:
+  determine-environment:
+    name: Determine Environment & Branch
     runs-on: ubuntu-latest
+    outputs:
+      branch: ${{ steps.determine.outputs.branch }}
+      environment: ${{ steps.determine.outputs.environment }}
+      deployable: ${{ steps.determine.outputs.deployable }}
     steps:
-      - name: Determine branch
-        id: vars
+      - name: Determine branch and environment
+        id: determine
         run: |
-          # Use input branch if workflow_dispatch, otherwise use github.ref
-          BRANCH="${{ github.event.inputs.branch }}"
-          if [ -z "$BRANCH" ]; then
+          # Determine branch
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ github.event.inputs.branch }}" != "" ]]; then
+            BRANCH="${{ github.event.inputs.branch }}"
+          else
             BRANCH="${GITHUB_REF#refs/heads/}"
           fi
-          echo "branch=$BRANCH" >> $GITHUB_ENV
+          
+          # Map branch to environment
+          case "$BRANCH" in
+            dev/test)
+              ENVIRONMENT="development"
+              DEPLOYABLE="true"
+              ;;
+            staging)
+              ENVIRONMENT="staging"
+              DEPLOYABLE="true"
+              ;;
+            prod|main)
+              ENVIRONMENT="production"
+              DEPLOYABLE="true"
+              ;;
+            *)
+              ENVIRONMENT="unknown"
+              DEPLOYABLE="false"
+              ;;
+          esac
+          
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+          echo "environment=$ENVIRONMENT" >> $GITHUB_OUTPUT
+          echo "deployable=$DEPLOYABLE" >> $GITHUB_OUTPUT
+          echo "Determined: Branch=$BRANCH, Environment=$ENVIRONMENT, Deployable=$DEPLOYABLE"
 
-      - name: Checkout code
-        uses: actions/checkout@v4
+  code-quality:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+    needs: determine-environment
+    steps:
+      - uses: actions/checkout@v4
         with:
-          ref: ${{ env.branch }}
+          ref: ${{ needs.determine-environment.outputs.branch }}
 
-      - name: Set up Python
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
-      - name: Install backend dependencies
-        working-directory: backend
-        run: pip install -r requirements.txt
-
-      - name: Run backend tests
-        working-directory: backend
-        run: |
-          pytest || true
-
-      - name: Run flake8 lint
+      - name: Run Linter
         working-directory: backend
         run: |
           pip install flake8
-          flake8 . || true
+          flake8 . --max-line-length=120
 
-      - name: Print current branch
-        run: echo ${{ env.branch }} 
-
-  deploy:
+  unit-tests:
+    name: Unit Tests
     runs-on: ubuntu-latest
-    needs: ci-checks
+    needs: determine-environment
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
-          ref: ${{ env.branch }}
+          ref: ${{ needs.determine-environment.outputs.branch }}
 
-      - name: Deploy based on branch
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Dependencies & Run Tests
+        working-directory: backend
         run: |
-          echo "Deploying branch: ${{ env.branch }}"
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+          pytest --cov=. --cov-report=xml
 
-          if [[ "${{ env.branch }}" == "dev/test" ]]; then
-            echo "✅ Dev/Test deploy: Validate docker-compose"
-            docker compose -f docker-compose.yml config
+      - name: Upload Coverage
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./backend/coverage.xml
 
-          elif [[ "${{ env.branch }}" == "staging" ]]; then
-            echo "✅ Staging deploy: Minikube + Kubernetes manifests"
-            # ... kubectl and minikube steps ...
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: [unit-tests, code-quality]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.determine-environment.outputs.branch }}
 
-          elif [[ "${{ env.branch }}" == "prod" ]]; then
-            echo "✅ Production deploy: ArgoCD GitOps"
-            # ... ArgoCD steps ...
+      - name: Run Integration Tests
+        working-directory: backend
+        run: |
+          echo "Running integration tests for ${{ needs.determine-environment.outputs.environment }}"
+          # Add your integration test commands here
+          # Example: pytest tests/integration/
 
-          else
-            echo "⚠️ Branch not configured for deploy. Skipping."
-          fi  
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: determine-environment
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.determine-environment.outputs.branch }}
+
+      - name: Run Bandit Security Scanner
+        working-directory: backend
+        run: |
+          pip install bandit
+          bandit -r . -f json -o bandit-results.json
+
+      - name: Run Safety Check
+        working-directory: backend
+        run: |
+          pip install safety
+          safety check -r requirements.txt --json
+
+  build-artifacts:
+    name: Build Artifacts
+    runs-on: ubuntu-latest
+    needs: [integration-tests, security-scan]
+    if: needs.determine-environment.outputs.deployable == 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.determine-environment.outputs.branch }}
+
+      - name: Build Docker Image
+        env:
+          BRANCH: ${{ needs.determine-environment.outputs.branch }}
+          ENVIRONMENT: ${{ needs.determine-environment.outputs.environment }}
+        run: |
+          echo "Building Docker image for $ENVIRONMENT"
+          docker build -t app:$BRANCH-${{ github.sha }} .
+
+      - name: Push to Registry (conditional)
+        if: ${{ needs.determine-environment.outputs.environment != 'unknown' }}
+        env:
+          ENVIRONMENT: ${{ needs.determine-environment.outputs.environment }}
+        run: |
+          echo "Would push to registry for $ENVIRONMENT environment"
+          # Add your container registry push commands here
+
+  deploy-development:
+    name: Deploy to Development
+    runs-on: ubuntu-latest
+    needs: build-artifacts
+    if: |
+      needs.determine-environment.outputs.environment == 'development' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    environment: development
+    steps:
+      - name: Deploy to Dev/Test
+        run: |
+          echo "🚀 Deploying to Development Environment"
+          docker compose -f docker-compose.yml config
+          # Add actual deployment commands here
+
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: build-artifacts
+    if: |
+      needs.determine-environment.outputs.environment == 'staging' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    environment: staging
+    steps:
+      - name: Deploy to Staging
+        run: |
+          echo "⚡ Deploying to Staging Environment"
+          # Add Minikube/kubectl commands here
+          echo "KUBECONFIG=$KUBECONFIG"
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: build-artifacts
+    if: |
+      needs.determine-environment.outputs.environment == 'production' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    environment: production
+    steps:
+      - name: Deploy to Production
+        run: |
+          echo "🏁 Deploying to Production Environment"
+          # Add ArgoCD commands here
+
+  post-deployment:
+    name: Post-Deployment Verification
+    runs-on: ubuntu-latest
+    needs:
+      - deploy-development
+      - deploy-staging
+      - deploy-production
+    if: always()
+    steps:
+      - name: Verify Deployments
+        run: |
+          echo "📊 Deployment Status Summary:"
+          echo "Development: ${{ needs.deploy-development.result || 'skipped' }}"
+          echo "Staging: ${{ needs.deploy-staging.result || 'skipped' }}"
+          echo "Production: ${{ needs.deploy-production.result || 'skipped' }}"
+
+      - name: Send Notification
+        if: always()
+        run: |
+          echo "Sending deployment notification"
+          # Add notification logic (Slack, Email, etc.)
