@@ -22,6 +22,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}   
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -53,6 +55,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}   
 
       - name: Deploy based on branch
         run: |
@@ -82,7 +86,7 @@ jobs:
             # create namespace
             kubectl create namespace url-shortener --dry-run=client -o yaml | kubectl apply -f -
 
-            # generate secrets
+            # create secrets
             kubectl create secret generic app-secrets \
               --from-literal=FLASK_SECRET_KEY=${{ secrets.FLASK_SECRET_KEY }} \
               --from-literal=SLACK_WEBHOOK_URL=${{ secrets.SLACK_WEBHOOK_URL }} \
