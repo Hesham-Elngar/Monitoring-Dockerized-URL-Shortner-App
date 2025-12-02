@@ -87,3 +87,4 @@ jobs:
 
           else
             echo "⚠️ Branch not configured for deploy. Skipping."
+          fi  
