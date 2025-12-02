@@ -1,13 +1,11 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    kompose.version: 1.37.0 (fb0539e64)
   labels:
     io.kompose.service: backend
   name: backend
 spec:
-  replicas: 1
+  replicas: {{ .Values.replicaCount.backend }}
   selector:
     matchLabels:
       io.kompose.service: backend
@@ -23,11 +21,11 @@ spec:
       containers:
         - env:
             - name: FLASK_ENV
-              value: production
+              value: {{ .Values.env.FLASK_ENV }}
           envFrom:
             - configMapRef:
                 name: env
-          image: heshammohammedelngar/url-shortener-backend:latest
+          image: {{ .Values.image.backend.repository }}:{{ .Values.image.backend.tag }}
           livenessProbe:
             exec:
               command:
@@ -40,6 +38,14 @@ spec:
             timeoutSeconds: 10
           name: backend
           ports:
-            - containerPort: 5000
+            - containerPort: {{ .Values.service.backend.port }}
               protocol: TCP
       restartPolicy: Always
+      volumeMounts:
+        - name: backend-data
+          mountPath: /app/data
+      volumes:
+        - name: backend-data
+          persistentVolumeClaim:
+            claimName: backend-pvc
+

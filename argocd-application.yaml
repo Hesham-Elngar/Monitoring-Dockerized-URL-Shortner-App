@@ -6,9 +6,9 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: 'https://github.com/<YOUR_USERNAME>/Monitoring-Dockerized-URL-Shortner-App.git'
-    targetRevision: main
-    path: docker-compose
+    repoURL: 'https://github.com/Hesham-Elngar/Monitoring-Dockerized-URL-Shortner-App.git'
+    targetRevision: prod
+    path: helm
     helm:
       valueFiles:
         - values.yaml

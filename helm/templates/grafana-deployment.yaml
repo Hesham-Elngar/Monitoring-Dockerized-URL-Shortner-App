@@ -1,14 +1,11 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    kompose.cmd: C:\Users\super magic\AppData\Local\Microsoft\WinGet\Packages\Kubernetes.kompose_Microsoft.Winget.Source_8wekyb3d8bbwe\kompose.exe convert -c
-    kompose.version: 1.37.0 (fb0539e64)
   labels:
     io.kompose.service: grafana
   name: grafana
 spec:
-  replicas: 1
+  replicas: {{ .Values.replicaCount.grafana }}
   selector:
     matchLabels:
       io.kompose.service: grafana
@@ -16,9 +13,6 @@ spec:
     type: Recreate
   template:
     metadata:
-      annotations:
-        kompose.cmd: C:\Users\super magic\AppData\Local\Microsoft\WinGet\Packages\Kubernetes.kompose_Microsoft.Winget.Source_8wekyb3d8bbwe\kompose.exe convert -c
-        kompose.version: 1.37.0 (fb0539e64)
       labels:
         io.kompose.service: grafana
     spec:
@@ -26,10 +20,10 @@ spec:
         - env:
             - name: GF_SECURITY_ADMIN_PASSWORD
               value: admin
-          image: grafana/grafana:latest
+          image:  {{ .Values.image.grafana.repository }}:{{ .Values.image.grafana.tag }}
           name: grafana
           ports:
-            - containerPort: 3000
+            - containerPort: {{ .Values.service.grafana.port }}
               protocol: TCP
           volumeMounts:
             - mountPath: /var/lib/grafana

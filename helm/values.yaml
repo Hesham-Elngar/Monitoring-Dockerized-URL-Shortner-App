@@ -46,49 +46,13 @@ service:
     type: ClusterIP
     port: 9093
 
-resources:
-  backend:
-    limits:
-      cpu: 500m
-      memory: 512Mi
-    requests:
-      cpu: 250m
-      memory: 256Mi
-  frontend:
-    limits:
-      cpu: 300m
-      memory: 256Mi
-    requests:
-      cpu: 150m
-      memory: 128Mi
-  prometheus:
-    limits:
-      cpu: 500m
-      memory: 512Mi
-    requests:
-      cpu: 250m
-      memory: 256Mi
-  grafana:
-    limits:
-      cpu: 300m
-      memory: 256Mi
-    requests:
-      cpu: 150m
-      memory: 128Mi
-  alertmanager:
-    limits:
-      cpu: 200m
-      memory: 128Mi
-    requests:
-      cpu: 100m
-      memory: 64Mi
-
 env:
   FLASK_ENV: production
 
 persistence:
   backend:
-    enabled: false
+    enabled: true
+    size: 1Gi
   frontend:
     enabled: false
   prometheus:

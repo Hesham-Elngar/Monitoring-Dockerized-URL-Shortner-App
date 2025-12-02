@@ -1,14 +1,11 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    kompose.cmd: C:\Users\super magic\AppData\Local\Microsoft\WinGet\Packages\Kubernetes.kompose_Microsoft.Winget.Source_8wekyb3d8bbwe\kompose.exe convert -c
-    kompose.version: 1.37.0 (fb0539e64)
   labels:
     io.kompose.service: prometheus
   name: prometheus
 spec:
-  replicas: 1
+  replicas:  {{ .Values.replicaCount.prometheus }}
   selector:
     matchLabels:
       io.kompose.service: prometheus
@@ -16,9 +13,6 @@ spec:
     type: Recreate
   template:
     metadata:
-      annotations:
-        kompose.cmd: C:\Users\super magic\AppData\Local\Microsoft\WinGet\Packages\Kubernetes.kompose_Microsoft.Winget.Source_8wekyb3d8bbwe\kompose.exe convert -c
-        kompose.version: 1.37.0 (fb0539e64)
       labels:
         io.kompose.service: prometheus
     spec:
@@ -28,10 +22,10 @@ spec:
             - --storage.tsdb.path=/prometheus
             - --storage.tsdb.retention.time=200h
             - --web.enable-lifecycle
-          image: prom/prometheus:latest
+          image: {{ .Values.image.prometheus.repository }}:{{ .Values.image.prometheus.tag }}
           name: prometheus
           ports:
-            - containerPort: 9090
+            - containerPort: {{ .Values.service.prometheus.port }}
               protocol: TCP
           volumeMounts:
             - mountPath: /etc/prometheus/prometheus.yml

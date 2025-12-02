@@ -1,27 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    kompose.cmd: C:\Users\super magic\AppData\Local\Microsoft\WinGet\Packages\Kubernetes.kompose_Microsoft.Winget.Source_8wekyb3d8bbwe\kompose.exe convert -c
-    kompose.version: 1.37.0 (fb0539e64)
   labels:
     io.kompose.service: frontend
   name: frontend
 spec:
-  replicas: 1
+  replicas: {{ .Values.replicaCount.frontend }}
   selector:
     matchLabels:
       io.kompose.service: frontend
   template:
     metadata:
-      annotations:
-        kompose.cmd: C:\Users\super magic\AppData\Local\Microsoft\WinGet\Packages\Kubernetes.kompose_Microsoft.Winget.Source_8wekyb3d8bbwe\kompose.exe convert -c
-        kompose.version: 1.37.0 (fb0539e64)
       labels:
         io.kompose.service: frontend
     spec:
       containers:
-        - image: heshammohammedelngar/url-shortener-frontend:latest
+        - image: {{ .Values.image.frontend.repository }}:{{ .Values.image.frontend.tag }}
           livenessProbe:
             exec:
               command:
@@ -33,6 +27,6 @@ spec:
             timeoutSeconds: 10
           name: frontend
           ports:
-            - containerPort: 80
+            - containerPort: {{ .Values.service.frontend.port }}
               protocol: TCP
       restartPolicy: Always
