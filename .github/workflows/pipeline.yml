@@ -2,12 +2,11 @@ name: Full CI-CD Pipeline
 
 on:
   workflow_dispatch:
-    branches:
-      - main
-      - dev/test
-      - staging
-      - prod
-  
+    inputs:
+      branch:
+        description: 'Branch to run CI/CD on'
+        required: true
+        default: 'dev/test'
   push:
     branches:
       - dev/test
@@ -21,16 +20,15 @@ on:
 jobs:
 
   #####################################
-  #      🔍 CI — TEST + LINT         #
+  #      🔍 CI — TEST + LINT          #
   #####################################
   ci-checks:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref }}   
+          ref: ${{ github.event.inputs.branch || github.ref }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -39,25 +37,24 @@ jobs:
 
       - name: Install backend dependencies
         working-directory: backend
-        run: |
-          pip install -r requirements.txt
+        run: pip install -r requirements.txt
 
       - name: Run backend tests
         working-directory: backend
-        run: |
-          pytest || true
+        run: pytest
 
       - name: Run flake8 lint
         working-directory: backend
         run: |
           pip install flake8
-          flake8 || true
-     
-      - name: orint current branch
-        run : echo ${{ github.ref }} 
+          flake8 .
+
+      - name: Print current branch
+        run: echo "Current branch: ${{ github.event.inputs.branch || github.ref }}"
+
 
   #####################################
-  #   🚀 Deploy (branch-based)       #
+  #   🚀 Deploy (branch-based)        #
   #####################################
   deploy:
     runs-on: ubuntu-latest
@@ -66,47 +63,49 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref }}   
+          ref: ${{ github.event.inputs.branch || github.ref }}
 
       - name: Deploy based on branch
         run: |
-          echo "Branch: $GITHUB_REF"
+          DEPLOY_BRANCH="${{ github.event.inputs.branch || github.ref }}"
 
-          if [[ "$GITHUB_REF" == "refs/heads/dev/test" ]]; then
+          echo "Deploying branch: $DEPLOY_BRANCH"
+
+          if [[ "$DEPLOY_BRANCH" == "refs/heads/dev/test" || "$DEPLOY_BRANCH" == "dev/test" ]]; then
             echo "✅ Dev/Test deploy: Validate docker-compose"
             docker compose -f docker-compose.yml config
 
-          elif [[ "$GITHUB_REF" == "refs/heads/staging" ]]; then
+          elif [[ "$DEPLOY_BRANCH" == "refs/heads/staging" || "$DEPLOY_BRANCH" == "staging" ]]; then
             echo "✅ Staging deploy: Minikube + Kubernetes manifests"
 
-            # install kubectl
+            # Install kubectl
             curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
             chmod +x kubectl
             sudo mv kubectl /usr/local/bin/
 
-            # install Minikube
+            # Install Minikube
             curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
             chmod +x minikube-linux-amd64
             sudo mv minikube-linux-amd64 /usr/local/bin/minikube
 
-            # start Minikube
+            # Start Minikube
             sudo minikube start --driver=docker --kubernetes-version=v1.28.0
             kubectl cluster-info
 
-            # create namespace
+            # Create namespace
             kubectl create namespace url-shortener --dry-run=client -o yaml | kubectl apply -f -
 
-            # create secrets
+            # Create secrets
             kubectl create secret generic app-secrets \
               --from-literal=FLASK_SECRET_KEY=${{ secrets.FLASK_SECRET_KEY }} \
               --from-literal=SLACK_WEBHOOK_URL=${{ secrets.SLACK_WEBHOOK_URL }} \
               --namespace url-shortener \
               --dry-run=client -o yaml | kubectl apply -f -
 
-            # apply manifests
+            # Apply manifests
             kubectl apply -f k8s/manifests/
 
-          elif [[ "$GITHUB_REF" == "refs/heads/prod" || "$GITHUB_REF" == "refs/heads/main" ]]; then
+          elif [[ "$DEPLOY_BRANCH" == "refs/heads/prod" || "$DEPLOY_BRANCH" == "prod" ]]; then
             echo "✅ Production deploy: ArgoCD GitOps"
 
             argocd login ${{ secrets.ARGOCD_SERVER }} \
@@ -119,4 +118,3 @@ jobs:
 
           else
             echo "⚠️ Branch not configured for deploy. Skipping."
-          fi
