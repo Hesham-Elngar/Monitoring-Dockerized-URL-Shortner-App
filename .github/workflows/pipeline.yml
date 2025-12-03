@@ -118,15 +118,16 @@ jobs:
       #               🔴 PRODUCTION — ARGOCD GITOPS                 #
       ###############################################################
       - name: Production — Sync ArgoCD App
-        if: env.BRANCH_NAME == 'prod'
+        if: ${{ env.BRANCH_NAME == 'prod' || env.BRANCH_NAME == 'main' }}
         run: |
           echo "Deploying to Production via ArgoCD..."
-
+      
           argocd login ${{ secrets.ARGOCD_SERVER }} \
             --username ${{ secrets.ARGOCD_USERNAME }} \
             --password ${{ secrets.ARGOCD_PASSWORD }} \
             --insecure
-
+      
           argocd app sync url-shortener
           argocd app wait url-shortener
+
 
