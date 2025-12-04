@@ -120,8 +120,8 @@ jobs:
       - name: Login to ECR
         uses: ./.github/actions/aws-setup
         with:
-          aws-account-id: ${{ vars.AWS_ACCOUNT_ID }}
-          aws-region: ${{ vars.AWS_REGION }}
+          aws-account-id: ${{ env.AWS_ACCOUNT_ID }}
+          aws-region: ${{ env.AWS_REGION }}
           ecr-login: true
           
       - name: SSH & Deploy
