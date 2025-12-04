@@ -13,9 +13,9 @@ on:
       - main
       - prod
 
-env:
-  AWS_REGION: ${{ env.AWS_REGION }}
-  AWS_ACCOUNT_ID: ${{ env.AWS_ACCOUNT_ID }}
+# env:
+#   AWS_REGION: ${{ env.AWS_REGION }}
+#   AWS_ACCOUNT_ID: ${{ env.AWS_ACCOUNT_ID }}
 
 jobs:
 
@@ -110,16 +110,10 @@ jobs:
     steps:
       - name: Prepare deployment files
         run: |
-          # Use secrets but replace placeholders
-          DOCKER_COMPOSE="${{ secrets.DOCKER_COMPOSE_YML }}"
-          
-          # Replace placeholders with actual values
-          DOCKER_COMPOSE="${DOCKER_COMPOSE//\$\{AWS_ACCOUNT_ID\}/${{ env.AWS_ACCOUNT_ID }}}"
-          DOCKER_COMPOSE="${DOCKER_COMPOSE//\$\{AWS_REGION\}/${{ env.AWS_REGION }}}"
-          
+          DOCKER_COMPOSE="${{ env.DOCKER_COMPOSE_YML }}"
+          echo "${{ env.DOT_ENV }}" > .env
           echo "$DOCKER_COMPOSE" > docker-compose.yml
           
-          echo "${{ secrets.DOT_ENV }}" > .env
           
           echo "Generated docker-compose.yml:"
           cat docker-compose.yml
