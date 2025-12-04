@@ -128,8 +128,8 @@ jobs:
 
           ssh -i /tmp/dev_key.pem ec2-user@${{ secrets.DEV_EC2_HOST }} << "EOF"
             cd /home/ec2-user/url-shortener
-            echo "${{ vars.DOT_ENV }}" > .env
-            echo "${{ vars.DOCKER_COMPOSE_YML }}" > docker-compose.yml
+            echo "${{ env.DOT_ENV }}" > .env
+            echo "${{ env.DOCKER_COMPOSE_YML }}" > docker-compose.yml
             cat .env  docker-compose.yml
             docker-compose pull
             docker-compose up -d --remove-orphans
