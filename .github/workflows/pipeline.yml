@@ -124,13 +124,17 @@ jobs:
 
       - name: SSH & Deploy
         run: |
+
+          echo "${{ env.DOT_ENV }}" > .env
+          echo "${{ env.DOCKER_COMPOSE_YML }}" > docker-compose.yml
+
           echo "${{ secrets.DEV_EC2_SSH_KEY }}" > key.pem
           chmod 600 key.pem
       
           mkdir -p ~/.ssh
           ssh-keyscan -H ${{ secrets.DEV_EC2_HOST }} >> ~/.ssh/known_hosts
       
-          ssh -i key.pem ec2-user@${{ secrets.DEV_EC2_HOST }} << EOF
+          ssh -i key.pem -A docker-compose.yml -A .env ec2-user@${{ secrets.DEV_EC2_HOST }} << EOF
           mkdir -p /home/ec2-user/url-shortener
           cd /home/ec2-user/url-shortener
           
