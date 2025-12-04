@@ -59,6 +59,7 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
+
       - name: Login to ECR
         uses: ./.github/actions/aws-setup
         with:
@@ -86,6 +87,7 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
+
       - name: Login to ECR
         uses: ./.github/actions/aws-setup
         with:
@@ -128,7 +130,7 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -H ${{ secrets.DEV_EC2_HOST }} >> ~/.ssh/known_hosts
 
-          ssh -i /tmp/key.pem ec2-user@${{ secrets.DEV_EC2_HOST }} << 'EOF'
+          ssh -i /tmp/dev_key.pem ec2-user@${{ secrets.DEV_EC2_HOST }} << 'EOF'
 cd /home/ec2-user/url-shortener
 
 cat > .env << EOT
@@ -154,6 +156,7 @@ EOF
     if: github.ref == 'refs/heads/staging'
     steps:
       - uses: actions/checkout@v4
+
       - name: Update kubeconfig
         run: |
           aws eks update-kubeconfig --name ${{ secrets.EKS_CLUSTER_NAME }} --region ${{ env.AWS_REGION }}
