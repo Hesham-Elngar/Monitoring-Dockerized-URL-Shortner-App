@@ -114,12 +114,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
  
-      - name: Configure AWS via OIDC
+      - name: Login to ECR
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/ecrAccessRole
           aws-region: ${{ env.AWS_REGION }}
-
+          ecr-login: true
+          
       - name: SSH & Deploy
         run: |
 
