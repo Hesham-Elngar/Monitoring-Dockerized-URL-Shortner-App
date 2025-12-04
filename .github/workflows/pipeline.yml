@@ -128,7 +128,7 @@ jobs:
           ssh-keyscan -H ${{ secrets.DEV_EC2_HOST }} >> ~/.ssh/known_hosts
 
           ssh -i key.pem ec2-user@${{ secrets.DEV_EC2_HOST }} "mkdir -p /home/ec2-user/url-shortener"
-          scp -i key.pem docker-compose.yml .env ec2-user@${{ secrets.DEV_EC2_HOST }}:/home/ec2-user/url-shortener/
+          scp -i key.pem ${{ vars.DOT_ENV }} ${{ vars.DOCKER_COMPOSE_YML }} ec2-user@${{ secrets.DEV_EC2_HOST }}:/home/ec2-user/url-shortener/
       
           ssh -i key.pem ec2-user@${{ secrets.DEV_EC2_HOST }} << EOF            
           cd /home/ec2-user/url-shortener
