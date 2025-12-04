@@ -9,7 +9,7 @@ runs:
   using: composite
   steps:
     - name: Generate Docker image tag
-      id: generate
+      id: version
       shell: bash
       run: |
         NEW_TAG="v$(date +'%Y.%m.%d-%H%M%S')"
