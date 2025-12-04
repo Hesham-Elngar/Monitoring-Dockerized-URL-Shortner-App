@@ -117,19 +117,12 @@ jobs:
     if: github.ref == 'refs/heads/dev'
     steps:
       - uses: actions/checkout@v4
-      - name: Prepare deployment files
-        run: |
-          echo "${{ secrets.DOT_ENV }}" > .env
-          echo "${{ env.DOCKER_COMPOSE_YML }}" > docker-compose.yml
-
-          echo "Generated docker-compose.yml:"
-          cat docker-compose.yml
 
       - name: SSH & Deploy
         run: |
 
-          echo "$env.DOT_ENV > .env
-          echo "$env.DOCKER_COMPOSE_YML" > docker-compose.yml
+          echo $env.DOT_ENV > .env
+          echo $env.DOCKER_COMPOSE_YML > docker-compose.yml
 
           echo "${{ secrets.DEV_EC2_SSH_KEY }}" > key.pem
           chmod 600 key.pem
