@@ -49,58 +49,58 @@ jobs:
   ##################################
   # 2️⃣ Backend-Containerization   #
   ##################################
-  # Backend-Containerization:
-  #   name: Backend-Containerization
-  #   runs-on: ubuntu-latest
-  #   needs: setup
-  #   permissions:
-  #     id-token: write
-  #     contents: read
-  #   steps:
-  #     - uses: actions/checkout@v4
+  Backend-Containerization:
+    name: Backend-Containerization
+    runs-on: ubuntu-latest
+    needs: setup
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
 
-  #     - name: Login to ECR
-  #       uses: ./.github/actions/aws-setup
-  #       with:
-  #         aws-account-id: ${{ env.AWS_ACCOUNT_ID }}
-  #         aws-region: ${{ env.AWS_REGION }}
-  #         ecr-login: true
+      - name: Login to ECR
+        uses: ./.github/actions/aws-setup
+        with:
+          aws-account-id: ${{ env.AWS_ACCOUNT_ID }}
+          aws-region: ${{ env.AWS_REGION }}
+          ecr-login: true
 
-  #     - name: Build and Push Backend
-  #       run: |
-  #         IMAGE=${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/url-shortener-backend:${{ needs.setup.outputs.new_tag }}
-  #         docker build -t $IMAGE ./backend
-  #         docker tag $IMAGE ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/url-shortener-backend:latest
-  #         docker push $IMAGE
-  #         docker push ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/url-shortener-backend:latest
+      - name: Build and Push Backend
+        run: |
+          IMAGE=${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/url-shortener-backend:${{ needs.setup.outputs.new_tag }}
+          docker build -t $IMAGE ./backend
+          docker tag $IMAGE ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/url-shortener-backend:latest
+          docker push $IMAGE
+          docker push ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/url-shortener-backend:latest
 
-  # ##################################
-  # # 3️⃣  Frontend-Containerization  #
-  # ##################################
-  # Frontend-Containerization:
-  #   name: Frontend-Containerization
-  #   runs-on: ubuntu-latest
-  #   needs: setup
-  #   permissions:
-  #     id-token: write
-  #     contents: read
-  #   steps:
-  #     - uses: actions/checkout@v4
+   ##################################
+   # 3️⃣  Frontend-Containerization  #
+   ##################################
+  Frontend-Containerization:
+    name: Frontend-Containerization
+    runs-on: ubuntu-latest
+    needs: setup
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
 
-  #     - name: Login to ECR
-  #       uses: ./.github/actions/aws-setup
-  #       with:
-  #         aws-account-id: ${{ env.AWS_ACCOUNT_ID }}
-  #         aws-region: ${{ env.AWS_REGION }}
-  #         ecr-login: true
+      - name: Login to ECR
+        uses: ./.github/actions/aws-setup
+        with:
+          aws-account-id: ${{ env.AWS_ACCOUNT_ID }}
+          aws-region: ${{ env.AWS_REGION }}
+          ecr-login: true
 
-  #     - name: Build frontend Docker image
-  #       run: |
-  #         IMAGE=${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/url-shortener-frontend:${{ needs.setup.outputs.new_tag }}
-  #         docker build -t $IMAGE ./frontend
-  #         docker tag $IMAGE ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/url-shortener-frontend:latest
-  #         docker push $IMAGE
-  #         docker push ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/url-shortener-frontend:latest
+      - name: Build frontend Docker image
+        run: |
+          IMAGE=${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/url-shortener-frontend:${{ needs.setup.outputs.new_tag }}
+          docker build -t $IMAGE ./frontend
+          docker tag $IMAGE ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/url-shortener-frontend:latest
+          docker push $IMAGE
+          docker push ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/url-shortener-frontend:latest
 
 
   ###############################
@@ -109,7 +109,7 @@ jobs:
   deploy-dev:
     name: Deploy to Dev
     runs-on: ubuntu-latest
-    needs: [setup]
+    needs: [Frontend-Containerization , Backend-Containerization]
     permissions:
       id-token: write
       contents: read
@@ -161,7 +161,7 @@ jobs:
   deploy-staging:
     name: Deploy to Staging
     runs-on: ubuntu-latest
-    # needs: [Frontend-Containerization, Backend-Containerization]
+    needs: [Frontend-Containerization, Backend-Containerization]
     if: github.ref == 'refs/heads/staging'
     steps:
       - uses: actions/checkout@v4
@@ -186,7 +186,7 @@ jobs:
   deploy-prod:
     name: Deploy to Production (ArgoCD)
     runs-on: ubuntu-latest
-    # needs: [Frontend-Containerization, Backend-Containerization]
+     needs: [Frontend-Containerization, Backend-Containerization]
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/prod'
     steps:
 
