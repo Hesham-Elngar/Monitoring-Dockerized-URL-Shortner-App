@@ -12,6 +12,9 @@ runs:
       id: version
       shell: bash
       run: |
-        NEW_TAG="v$(date +'%Y.%m.%d-%H%M%S')"
+        SHORT_SHA=$(echo "${GITHUB_SHA}" | cut -c1-8)
+        NEW_TAG="v1-${SHORT_SHA}"
         echo "new_tag=$NEW_TAG" >> $GITHUB_OUTPUT
         echo "NEW_TAG=$NEW_TAG" >> $GITHUB_ENV
+        
+        
