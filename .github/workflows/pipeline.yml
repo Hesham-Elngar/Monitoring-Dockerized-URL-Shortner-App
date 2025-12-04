@@ -40,14 +40,30 @@ jobs:
           IFS='.' read -r MAJOR MINOR PATCH <<< "${LATEST_TAG#v}"
           PATCH=$((PATCH + 1))
           NEW_TAG="v$MAJOR.$MINOR.$PATCH"
+          
+          echo "Generated new tag: $NEW_TAG"
+          
+          # Use new GITHUB_OUTPUT method (not deprecated)
+          echo "new_tag=$NEW_TAG" >> $GITHUB_OUTPUT
           echo "NEW_TAG=$NEW_TAG" >> $GITHUB_ENV
-          echo "::set-output name=new_tag::$NEW_TAG"
+
 
       - name: Configure AWS via OIDC
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/ecrAccessRole
           aws-region: ${{ env.AWS_REGION }}
+
+      - name: Verify AWS credentials
+        run: |
+          echo "Testing AWS credentials..."
+          aws sts get-caller-identity
+          
+      - name: List ECR repositories
+        run: |
+          echo "Listing ECR repositories..."
+          aws ecr describe-repositories --region ${{ env.AWS_REGION }}
+    
 
   ##################################
   # 2️⃣ Build backend image        #
