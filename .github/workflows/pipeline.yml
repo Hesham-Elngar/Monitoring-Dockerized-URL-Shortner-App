@@ -113,12 +113,11 @@ jobs:
     needs: [Frontend-Containerization, Backend-Containerization]
     if: github.ref == 'refs/heads/dev'
     steps:
-
+      - uses: actions/checkout@v4
       - name: Prepare deployment files
         run: |
           echo "${{ secrets.DOT_ENV }}" > .env
-          echo "${{ secrets.DOCKER_COMPOSE_YAML }}" > docker-compose.yml
-          echo "${{ env.DOCKER_COMPOSE_YML }}" > docker-compose.yml_2
+          echo "${{ env.DOCKER_COMPOSE_YML }}" > docker-compose.yml
 
           echo "Generated docker-compose.yml:"
           cat docker-compose.yml
