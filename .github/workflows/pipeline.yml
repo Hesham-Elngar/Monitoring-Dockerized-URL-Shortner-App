@@ -134,13 +134,8 @@ jobs:
           mkdir -p /home/ec2-user/url-shortener
           cd /home/ec2-user/url-shortener
           
-          cat > .env << EOT
-          ${{ env.DOT_ENV }}
-          EOT
-          
-          cat > docker-compose.yml << EOT
-          ${{ env.DOCKER_COMPOSE_YML }}
-          EOT
+          echo "${{ env.DOT_ENV }}" > .env
+          echo "${{ env.DOCKER_COMPOSE_YML }}" > docker-compose.yml
           
           docker-compose pull && docker-compose up -d
           docker ps
