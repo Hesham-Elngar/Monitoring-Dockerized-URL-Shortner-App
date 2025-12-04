@@ -87,7 +87,7 @@ jobs:
   push-backend:
     name: Push Backend Image
     runs-on: ubuntu-latest
-    needs: build-backend
+    needs: [build-backend , setup]
     env: 
       NEW_TAG: ${{ needs.setup.outputs.new_tag }}
     permissions:
@@ -116,7 +116,7 @@ jobs:
   push-frontend:
     name: Push Frontend Image
     runs-on: ubuntu-latest
-    needs: build-frontend
+    needs: [build-frontend , setup]
     env: 
       NEW_TAG: ${{ needs.setup.outputs.new_tag }}
     permissions:
