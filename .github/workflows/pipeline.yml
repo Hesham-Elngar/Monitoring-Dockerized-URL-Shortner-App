@@ -171,23 +171,38 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
-
+  
+      # Configure AWS & login to ECR if needed
       - name: Login to ECR
         uses: ./.github/actions/aws-setup
         with:
           aws-account-id: ${{ env.AWS_ACCOUNT_ID }}
           aws-region: ${{ env.AWS_REGION }}
           ecr-login: true
-    
-
+  
+      # Update kubeconfig so kubectl can talk to your EKS cluster
       - name: Update kubeconfig
         run: |
           aws eks update-kubeconfig --name ${{ secrets.EKS_CLUSTER_NAME }} --region ${{ env.AWS_REGION }}
-          
+  
+      # Install kubectl
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'latest'
+  
+      # Install Helm
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: 'latest'
+  
       # Create namespace
       - name: Create namespace
         run: |
-          kubectl create namespace staging --dry-run=client -o yaml | kubectl apply -f -
+          if ! kubectl get namespace staging; then
+            kubectl create namespace staging
+          fi
   
       # Deploy Helm chart
       - name: Deploy Helm
@@ -195,12 +210,11 @@ jobs:
           helm upgrade --install url-shortener ./helm \
             -f ./helm/values.yaml \
             -n staging
-
+  
       # Optional: Verify Deployment
       - name: Check pods
         run: kubectl get pods -n staging
-        
-
+       
   ##################################
   # 8️⃣  Deploy to Production       #
   ##################################
@@ -210,7 +224,7 @@ jobs:
     needs: [Frontend-Containerization, Backend-Containerization]
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/prod'
     steps:
-
+      - uses: actions/checkout@v4
       - name: Install ArgoCD CLI
         run: |
           curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
@@ -218,3 +232,14 @@ jobs:
 
       - name: Test CLI
         run: argocd version --client
+
+      - name:  ArgoCD Sync
+        run: |
+          argocd login ${{ secrets.ARGOCD_SERVER }} \
+            --username ${{ secrets.ARGOCD_USERNAME }} \
+            --password ${{ secrets.ARGOCD_TOKEN }} \
+            --insecure
+
+          argocd app sync url-shortener
+          argocd app wait url-shortener
+        
