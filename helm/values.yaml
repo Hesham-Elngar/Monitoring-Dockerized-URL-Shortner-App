@@ -1,5 +1,3 @@
-# values.yaml for URL Shortener Helm chart
-
 replicaCount:
   backend: 1
   frontend: 1
@@ -52,18 +50,56 @@ env:
 persistence:
   backend:
     enabled: true
-    size: 1Gi
+    size: 500Mi   
   frontend:
     enabled: false
   prometheus:
     enabled: true
-    size: 1Gi
+    size: 500Mi
   grafana:
     enabled: true
-    size: 1Gi
+    size: 500Mi
   alertmanager:
     enabled: true
-    size: 500Mi
+    size: 250Mi
+
+resources:
+  backend:
+    requests:
+      memory: "64Mi"
+      cpu: "50m"
+    limits:
+      memory: "128Mi"
+      cpu: "100m"
+  frontend:
+    requests:
+      memory: "64Mi"
+      cpu: "50m"
+    limits:
+      memory: "128Mi"
+      cpu: "100m"
+  prometheus:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "250m"
+  grafana:
+    requests:
+      memory: "64Mi"
+      cpu: "50m"
+    limits:
+      memory: "128Mi"
+      cpu: "100m"
+  alertmanager:
+    requests:
+      memory: "64Mi"
+      cpu: "50m"
+    limits:
+      memory: "128Mi"
+      cpu: "100m"
+
 
 alertmanager:
   slackApiUrl: "https://hooks.slack.com/services/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"
@@ -92,4 +128,3 @@ prometheus:
     - name: HighMemoryUsage
       expr: 'process_resident_memory_bytes{job="url-shortener"} > 100000000'
       severity: warning
-
