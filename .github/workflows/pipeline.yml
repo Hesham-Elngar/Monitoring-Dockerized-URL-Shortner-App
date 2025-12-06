@@ -209,14 +209,20 @@ jobs:
       - name: Install kube-score
         run: |
           LATEST=$(curl -s https://api.github.com/repos/zegl/kube-score/releases/latest \
-            | grep browser_download_url \
-            | grep "linux_amd64" \
-            | grep -v ".deb" \
+            | grep '"browser_download_url"' \
+            | grep -E 'linux_amd64"$' \
             | cut -d '"' -f 4)
-            echo "Downloading: $LATEST"
-            curl -L "$LATEST" -o kube-score
-            chmod +x kube-score
-            sudo mv kube-score /usr/local/bin/
+      
+          echo "Downloading: $LATEST"
+      
+          if [ -z "$LATEST" ]; then
+            echo "ERROR: No kube-score binary found"
+            exit 1
+          fi
+      
+          curl -L "$LATEST" -o kube-score
+          chmod +x kube-score
+          sudo mv kube-score /usr/local/bin/
         
 
       - name: Run kube-score
