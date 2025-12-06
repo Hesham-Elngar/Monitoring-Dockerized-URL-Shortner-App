@@ -206,13 +206,12 @@ jobs:
             -f ./helm/values.yaml \
             -n staging
 
-
       - name: Install kube-score
         run: |
           curl -L https://github.com/zegl/kube-score/releases/latest/download/kube-score_amd64 -o kube-score
           chmod +x kube-score
           sudo mv kube-score /usr/local/bin/
-          sudo dpkg -i kube-score.deb
+    
 
       - name: Run kube-score
         run: |
