@@ -205,10 +205,22 @@ jobs:
           helm upgrade --install url-shortener ./helm \
             -f ./helm/values.yaml \
             -n staging
-  
+
+
+      - name: Install kube-score
+        run: |
+          curl -L https://github.com/zegl/kube-score/releases/latest/download/kube-score_ubuntu_amd64.deb -o kube-score.deb
+          sudo dpkg -i kube-score.deb
+
+      - name: Run kube-score
+        run: |
+          helm template url-shortener ./helm > rendered.yaml
+          kube-score score rendered.yaml
+
       # Optional: Verify Deployment
       - name: Check pods
         run: kubectl get pods -n staging
+        
 
   ##################################
   # 8️⃣  Deploy to Production       #
