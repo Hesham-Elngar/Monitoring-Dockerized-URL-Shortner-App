@@ -42,7 +42,7 @@ jobs:
         uses: ./.github/actions/generate-tag
 
       - name: Configure AWS via OIDC
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/ecrAccessRole
           aws-region: eu-west-1
