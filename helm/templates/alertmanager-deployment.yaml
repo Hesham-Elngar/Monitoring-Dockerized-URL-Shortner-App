@@ -31,6 +31,8 @@ spec:
               subPath: alertmanager.yml
             - mountPath: /alertmanager
               name: alertmanager-data
+          resources:
+            {{- toYaml .Values.resources.alertmanager | nindent 12 }}
       restartPolicy: Always
       volumes:
         - configMap:
@@ -39,6 +41,11 @@ spec:
                 path: alertmanager.yml
             name: alertmanager-cm0
           name: alertmanager-cm0
+        {{- if .Values.persistence.alertmanager.enabled }}
         - name: alertmanager-data
           persistentVolumeClaim:
             claimName: alertmanager-data
+        {{- else }}
+        - name: alertmanager-data
+          emptyDir: {}
+        {{- end }}
