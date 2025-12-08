@@ -293,7 +293,7 @@ jobs:
 
       - name:  ArgoCD Sync
         run: |
-          argocd login ${{ secrets.ARGOCD_SERVER }}:443 \
+          argocd login ${{ secrets.ARGOCD_SERVER }} \
             --username ${{ secrets.ARGOCD_USERNAME }} \
             --password ${{ secrets.ARGOCD_TOKEN }} \
             --insecure
