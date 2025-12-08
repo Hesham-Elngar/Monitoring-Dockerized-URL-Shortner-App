@@ -5,7 +5,7 @@ metadata:
     io.kompose.service: prometheus
   name: prometheus
 spec:
-  replicas:  {{ .Values.replicaCount.prometheus }}
+  replicas: {{ .Values.replicaCount.prometheus }}
   selector:
     matchLabels:
       io.kompose.service: prometheus
@@ -36,6 +36,8 @@ spec:
               subPath: alerts.yml
             - mountPath: /prometheus
               name: prometheus-data
+          resources:
+            {{- toYaml .Values.resources.prometheus | nindent 12 }}
       restartPolicy: Always
       volumes:
         - configMap:
@@ -50,6 +52,11 @@ spec:
                 path: alerts.yml
             name: prometheus-cm1
           name: prometheus-cm1
+        {{- if .Values.persistence.prometheus.enabled }}
         - name: prometheus-data
           persistentVolumeClaim:
             claimName: prometheus-data
+        {{- else }}
+        - name: prometheus-data
+          emptyDir: {}
+        {{- end }}

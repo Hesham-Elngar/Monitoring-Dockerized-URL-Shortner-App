@@ -30,6 +30,12 @@ spec:
               name: grafana-data
       restartPolicy: Always
       volumes:
+        {{- if .Values.persistence.grafana.enabled }}
         - name: grafana-data
           persistentVolumeClaim:
             claimName: grafana-data
+        {{- else }}
+        - name: grafana-data
+          emptyDir: {}
+        {{- end }}
+  

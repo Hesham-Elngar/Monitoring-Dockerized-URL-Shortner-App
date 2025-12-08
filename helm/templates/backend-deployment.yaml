@@ -49,7 +49,12 @@ spec:
       restartPolicy: Always
 
       volumes:
+        {{- if .Values.persistence.backend.enabled }}
         - name: backend-data
           persistentVolumeClaim:
             claimName: backend-pvc
+        {{- else }}
+        - name: backend-data
+          emptyDir: {}
+        {{- end }}    
 
