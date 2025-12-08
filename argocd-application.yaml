@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: 'https://github.com/Hesham-Elngar/Monitoring-Dockerized-URL-Shortner-App.git'
+    repoURL: 'https://github.com/Hesham-Elngar/ShortOps.git'
     targetRevision: prod
     path: helm
     helm:
