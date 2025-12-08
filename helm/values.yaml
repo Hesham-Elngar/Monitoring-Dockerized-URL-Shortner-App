@@ -100,7 +100,17 @@ resources:
       memory: "128Mi"
       cpu: "100m"
 
-
+# StorageClass Configuration
+storageClass:
+  create: true
+  name: gp2
+  isDefault: true
+  type: gp2
+  fsType: ext4
+  reclaimPolicy: Delete
+  volumeBindingMode: WaitForFirstConsumer
+  allowVolumeExpansion: true
+  
 alertmanager:
   slackApiUrl: "https://hooks.slack.com/services/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"
   slackChannel: "#url-shortner"
