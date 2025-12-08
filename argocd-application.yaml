@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: url-shortener
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: 'https://github.com/Hesham-Elngar/Monitoring-Dockerized-URL-Shortner-App.git'
+    targetRevision: prod
+    path: helm
+    helm:
+      valueFiles:
+        - values.yaml
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: url-shortener
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+
