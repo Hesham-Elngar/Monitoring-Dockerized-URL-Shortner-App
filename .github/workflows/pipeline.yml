@@ -174,8 +174,10 @@ jobs:
       - name: Configure AWS via OIDC
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/ecrAccessRole
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/github-actions-eks-role
           aws-region: ${{ env.AWS_REGION }}
+          role-session-name: github-actions
+          
       # Configure AWS & login to ECR if needed
       - name: Login to ECR
         uses: ./.github/actions/aws-setup
@@ -200,13 +202,6 @@ jobs:
         uses: azure/setup-helm@v4
         with:
           version: 'latest'
-  
-      # Create namespace
-      - name: Create namespace
-        run: |
-          if ! kubectl get namespace staging; then
-            kubectl create namespace staging
-          fi
   
       # Deploy Helm chart
       - name: Deploy Helm
